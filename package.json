@@ -1,0 +1,27 @@
+{
+  "name": "music-bot",
+  "version": "1.0.0",
+  "description": "A music bot use node16, discordjs13, distube13",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": "Hung",
+  "license": "ISC",
+  "dependencies": {
+    "@discordjs/opus": "^0.6.0",
+    "@discordjs/voice": "^0.6.0",
+    "@distube/soundcloud": "^1.0.0",
+    "@distube/spotify": "^1.0.0",
+    "discord.js": "^13.2.0",
+    "distube": "^3.0.1",
+    "dotenv": "^10.0.0",
+    "express": "^4.17.1",
+    "ffmpeg-static": "^4.4.0",
+    "genius-lyrics-api": "^3.2.0",
+    "libsodium-wrappers": "^0.7.9",
+    "lyrics-finder": "^21.7.0",
+    "node-fetch": "^2.6.1"
+  }
+}
