@@ -1,30 +1,11 @@
 const { MessageEmbed, Util } = require('discord.js');
-const { getLyrics, searchSong } = require('genius-lyrics-api');
-const fs = require('fs');
+const { getLyrics } = require('genius-lyrics-api');
 const fetch = require('node-fetch');
 const lyricsFinder = require('lyrics-finder');
 
 const CONFIG = {
   prefix: '!!',
   prefixCache: '!!',
-  ownersId: '336414283724226564',
-  filters: [
-    '3d',
-    'bassboost',
-    'echo',
-    'karaoke',
-    'nightcore',
-    'vaporwave',
-    'flanger',
-    'gate',
-    'haas',
-    'reverse',
-    'surround',
-    'mcompand',
-    'phaser',
-    'tremolo',
-    'earwax',
-  ],
   emojis: [
     '💖',
     '🥰',
@@ -52,10 +33,9 @@ const CONFIG = {
     '🤩',
     '👀',
   ],
-  botID: '<@!896827276828737547>',
-  lyricsKEY: 'BBoCCvo0iS0mBg7c8quSrwzD4Ydp-FwoxD-FNMImqQ1vNjY12yp6FKn3twd4FYOv',
-  ytck: 'SID=Cgjj_06dcs93EyCxGMVP4J1bimoxMJPFMLz-mjr7-aRjnapLmlt2zWtvDT_FlDvtCNhf0w.; __Secure-1PSID=Cgjj_06dcs93EyCxGMVP4J1bimoxMJPFMLz-mjr7-aRjnapLHfn5ZiPtq7JuDGtM2QC2jw.; __Secure-3PSID=Cgjj_06dcs93EyCxGMVP4J1bimoxMJPFMLz-mjr7-aRjnapLHKFzNlROmqgqjd8G2TLJcw.; HSID=AUfdEoT3sImdh4Ijt; SSID=AaLalmZ7n1IQMSG06; APISID=Hu0LddJjpQCRQhu4/AZEArws6OZZuAHprD; SAPISID=inhmzxsEqUObJGRg/ADh9CslVCrvGso10Q; __Secure-1PAPISID=inhmzxsEqUObJGRg/ADh9CslVCrvGso10Q; __Secure-3PAPISID=inhmzxsEqUObJGRg/ADh9CslVCrvGso10Q; LOGIN_INFO=AFmmF2swRQIhAKWslmtIgrYYU7ciOdcbeBmcm7WdsoXk50_sIMto_VdoAiAl4rOq5G6nDFgOHS-lPMtBEznzc38aavHfwLXYGuQYrQ:QUQ3MjNmeGJtMFJNQnRraFhQaHp4OFBESDg3RUt2TWIzQTR5VDdxQ1hEZUpGcEZZb2trSXBVcjlWclBmMlAxcUxwcVg4Zk5oQUNITjRxV0F1WE1LOHlyd1VkUVQ3Xy1Bc0VkZ1dYSUtvSDVxeEdxeDMzdU9yYVBLXzZUdmkzREh0Z1FMOUZJV0NxMjNqZ29vZzlZYjAtY1FNbG9ySmVaUHpn; VISITOR_INFO1_LIVE=QOpido1vAJg; PREF=tz=Asia.Saigon; YSC=95_RtNB4xUY; CONSISTENCY=AGDxDeN0B5oxF5BvEo9TNwNKSk-eqVK_fwMf0f_HmvCuo_2i1WbUcYMn4a2fuY2gzxwF6F-aRknAHtFEWwlHUxwtdSK3DwZ1nQXQ-43XJ66EWrSk9SJXCcVIcK9ZS57yK3QS9Txy9EWNoWFzof3Z3MRC; SIDCC=AJi4QfGDb3X2QcfsLQenjX0DG48gSCLBV0SXy-fwKMhjrPQFprxXvi1IebNavPVrQ1U7apNekA; __Secure-3PSIDCC=AJi4QfHikLmmsDfRJvfKV4t0ZDZdft_aoaOY-syFO9SwdM_IF7YzW6nFOyg9nhLBwz9s424fNg',
-  wh: 'https://discord.com/api/webhooks/892943608360075285/wWVheioweyxWMNdJb0Ok17NxBWfuN_0_NPvD1EqUXvD-LSa7W3jXkuDI_iC3mQ0f5l0n',
+  lyricsKEY: '',
+  ytck: '',
+  wh: '',
 };
 module.exports.CONFIG = CONFIG;
 
@@ -65,12 +45,8 @@ const removeSpoiler = (str) => {
 module.exports.removeSpoiler = removeSpoiler;
 
 const addReact = async (message) => {
-  message.react(
-    CONFIG.emojis[Math.floor(Math.random() * CONFIG.emojis.length)]
-  );
-  message.react(
-    CONFIG.emojis[Math.floor(Math.random() * CONFIG.emojis.length)]
-  );
+  // message.react(CONFIG.emojis[Math.floor(Math.random() * CONFIG.emojis.length)])
+  //   .catch(console.error);
 };
 module.exports.addReact = addReact;
 
@@ -105,8 +81,8 @@ module.exports.isPermsDJ = isPermsDJ;
 
 const getEmbedMsg = (message, color, title, description) => {
   const embed = new MessageEmbed({
-    title: removeSpoiler(title) || ' ',
-    description: removeSpoiler(description) || ' ',
+    title: removeSpoiler(title || '') || ' ',
+    description: removeSpoiler(description || '') || ' ',
   })
     .setColor(color)
     .setTimestamp()
@@ -115,7 +91,7 @@ const getEmbedMsg = (message, color, title, description) => {
       'https://cdn.discordapp.com/attachments/893077644311142450/896571458808082502/istockphoto-1036106190-612x612.jpeg'
     );
 
-  message.channel.send({ embeds: [embed] });
+  message.channel.send({ embeds: [embed] }).catch(console.error);
 };
 module.exports.getEmbedMsg = getEmbedMsg;
 
@@ -139,40 +115,9 @@ module.exports.getLyric = getLyric;
 module.exports.getStatus = (queue) =>
   `Status: \`${queue.playing ? 'Playing' : 'Pause'}\`\nVolume: \`${
     queue.volume
-  }\` | Filter: \`${queue.filters.join(', ') || 'OFF'}\` | Loop: \`${
-    queue.repeatMode
-      ? queue.repeatMode === 2
-        ? 'All Queue'
-        : 'This Song'
-      : 'Off'
+  }\` | Filter: \`${queue.filters.join(', ') || 'Off'}\` | Loop: \`${
+    queue.repeatMode ? (queue.repeatMode === 2 ? 'Queue' : 'Song') : 'Off'
   }\` | Autoplay: \`${queue.autoplay ? 'On' : 'Off'}\``;
-//message.guild.id
-const resetSkip = async (id) => {
-  const serverId = id;
-  const path = `./data/skip-${serverId}.json`;
-
-  if (!fs.existsSync(path)) {
-    fs.writeFileSync(
-      path,
-      JSON.stringify({
-        count: 0,
-        userid: [],
-      })
-    );
-  }
-  let data = fs.readFileSync(path, { encoding: 'utf8', flag: 'r' });
-  data = JSON.parse(data);
-
-  if (data && data.count == 0) return;
-
-  data = {
-    count: 0,
-    userid: [],
-  };
-
-  fs.writeFileSync(path, JSON.stringify(data));
-};
-module.exports.resetSkip = resetSkip;
 
 const swapPosition = (arr, x, y) => {
   const t = arr[x];
@@ -181,27 +126,7 @@ const swapPosition = (arr, x, y) => {
 };
 module.exports.swapPosition = swapPosition;
 
-const notifsError = async (err) => {
-  if (!err) return;
-  const body = {
-    content: `**<@336414283724226564>**`,
-    embeds: [
-      {
-        title: 'Music Sanity Bot',
-        description: `${err || ' '}`,
-        color: 16711680,
-      },
-    ],
-  };
-
-  try {
-    const response = await fetch(CONFIG.wh, {
-      method: 'post',
-      body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json' },
-    });
-  } catch (err) {}
-};
+const notifsError = async (err) => {};
 module.exports.notifsError = notifsError;
 
 const formatMsg = (msg) => {
@@ -221,7 +146,6 @@ const checkPermission = (message) => {
             `Bots don't have permission \`SEND_MESSAGES\` in that channel`
           )}`
         )
-        .then(console.log)
         .catch(console.error);
       return true;
     }
@@ -233,7 +157,6 @@ const checkPermission = (message) => {
             `Bots don't have permission \`EMBED_LINKS\` in this channel`
           )}`
         )
-        .then(console.log)
         .catch(console.error);
       return true;
     }
@@ -244,3 +167,35 @@ const checkPermission = (message) => {
   }
 };
 module.exports.checkPermission = checkPermission;
+
+const progressBar = ({
+  time,
+  totalTime,
+  timeFormat,
+  totalTimeFormat,
+  size = 15,
+}) => {
+  const percentage = time / totalTime;
+  const progress = Math.round(size * percentage);
+  const emptyProgress = size - progress;
+
+  const progressText = '▇'.repeat(progress);
+  const emptyProgressText = '—'.repeat(emptyProgress);
+
+  const bar = `${timeFormat} ${progressText}${emptyProgressText} ${totalTimeFormat}`;
+  return bar;
+};
+module.exports.progressBar = progressBar;
+
+const formatInt = (int) => (int < 10 ? `0${int}` : int);
+function formatDuration(sec) {
+  if (!sec || !Number(sec)) return '00:00';
+  const seconds = Math.round(sec % 60);
+  const minutes = Math.floor((sec % 3600) / 60);
+  const hours = Math.floor(sec / 3600);
+  if (hours > 0)
+    return `${formatInt(hours)}:${formatInt(minutes)}:${formatInt(seconds)}`;
+  if (minutes > 0) return `${formatInt(minutes)}:${formatInt(seconds)}`;
+  return `00:${formatInt(seconds)}`;
+}
+module.exports.formatDuration = formatDuration;

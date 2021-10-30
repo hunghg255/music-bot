@@ -7,7 +7,6 @@ require('dotenv').config();
 
 const { keepAlive } = require('./keep-alive.js');
 const {
-  resetSkip,
   CONFIG,
   getStatus,
   isPermsDJ,
@@ -15,7 +14,9 @@ const {
   formatMsg,
   checkPermission,
   removeSpoiler,
+  formatDuration,
 } = require('./utils/index.js');
+const filters = require('./data/filters.json');
 
 const client = new Discord.Client({
   intents: [
@@ -32,12 +33,13 @@ client.distube = new Distube.default(client, {
   emitNewSongOnly: true,
   leaveOnFinish: false,
   leaveOnStop: false,
-  updateYouTubeDL: false,
-  searchCooldown: 10,
+  emitAddSongWhenCreatingQueue: false,
+  searchSongs: 0,
+  emptyCooldown: 25,
   plugins: [
     new SpotifyPlugin({
       parallel: true,
-      emitEventsAfterFetching: false,
+      emitEventsAfterFetching: true,
       api: {
         clientId: process.env.S_ID,
         clientSecret: process.env.S_SC,
@@ -45,11 +47,17 @@ client.distube = new Distube.default(client, {
     }),
     new SoundCloudPlugin(),
   ],
+  youtubeDL: true,
+  updateYouTubeDL: false,
   youtubeCookie: CONFIG.ytck,
   ytdlOptions: {
-    highWaterMark: 1 << 24,
+    highWaterMark: 1024 * 1024 * 64,
     quality: 'highestaudio',
+    format: 'audioonly',
+    liveBuffer: 60000,
+    dlChunkSize: 1024 * 1024 * 64,
   },
+  customFilters: filters,
 });
 
 client.commands = new Discord.Collection();
@@ -131,6 +139,7 @@ client.on('ready', () => {
       newData[sv.id] = CONFIG.prefix;
     } else {
       newData[sv.id] = data[sv.id];
+      client.prefix[sv.id] = data[sv.id];
     }
   }
 
@@ -181,23 +190,28 @@ client.on('messageCreate', async (message) => {
     let data = fs.readFileSync(PATH_PREFIX, { encoding: 'utf8', flag: 'r' });
     data = JSON.parse(data);
     if (data && data[serverId]) {
-      CONFIG.prefix = data[serverId];
+      client.prefix[serverId] = data[serverId];
     } else {
-      CONFIG.prefix = CONFIG.prefixCache;
+      client.prefix[serverId] = CONFIG.prefixCache;
     }
-  } else if (client.prefix[serverId]) {
-    CONFIG.prefix = client.prefix[serverId];
   }
+  const prefix = client.prefix[serverId];
+  CONFIG.prefix = client.prefix[serverId];
 
-  if (message.content.includes(CONFIG.botID)) {
-    return message.channel.send(
-      formatMsg(`Please use \`${CONFIG.prefix}help\` to show all commands`)
-    );
+  if (message.content.includes(client.user.id)) {
+    return message.channel
+      .send(
+        formatMsg(`Please use \`${CONFIG.prefix}help\` to show all commands`)
+      )
+      .catch(console.error);
   }
 
   // search list
-  if (client.searchList && client.authorSearch) {
-    if (client.authorSearch.id === message.author.id) {
+  if (
+    client[`search-${message.author.id}`] &&
+    client[`author-${message.author.id}`]
+  ) {
+    if (client[`author-${message.author.id}`] === message.author.id) {
       const isDj = await isPermsDJ(client, message);
       const queue = client.distube.getQueue(message);
 
@@ -206,38 +220,94 @@ client.on('messageCreate', async (message) => {
           return song.user.id === message.author.id;
         });
         if (!isDj && listSongsUserSelect.length >= 3) {
-          client.searchList = null;
-          client.authorSearch = null;
-          return message.channel.send(
-            formatMsg(
-              `You can only add up to 3 songs, You need a \`DJ\` role to add more songs`
+          client[`search-${message.author.id}`] = null;
+          client[`author-${message.author.id}`] = null;
+          return message.channel
+            .send(
+              formatMsg(
+                `You can only add up to 3 songs, You need a \`DJ\` role to add more songs`
+              )
             )
-          );
+            .catch(console.error);
         }
       }
 
+      const numberSongs = message.content.split(' ');
       if (
-        +message.content > 0 &&
-        +message.content <= client.searchList.length
+        numberSongs.length === 1 &&
+        +numberSongs[0] >= 0 &&
+        +numberSongs[0] <= client[`search-${message.author.id}`].length
       ) {
-        message.channel.send(formatMsg(`Selected success.`));
-        const songSelect = client.searchList[+message.content - 1];
-
+        if (+numberSongs[0] === 0) {
+          message.channel
+            .send(formatMsg(`Searching canceled.`))
+            .catch(console.error);
+          client[`search-${message.author.id}`] = null;
+          client[`author-${message.author.id}`] = null;
+          clearTimeout(client[`time-${message.author.id}`]);
+          client[`time-${message.author.id}`] = 0;
+          return;
+        }
+        message.channel
+          .send(formatMsg(`Selected \`${numberSongs[0]}\` success.`))
+          .catch(console.error);
+        const songSelect =
+          client[`search-${message.author.id}`][+numberSongs[0] - 1];
         client.distube.play(message, songSelect);
-        client.searchList = null;
-        client.authorSearch = null;
-      } else {
-        message.channel.send(formatMsg(`Wrong postion!`));
+        client[`search-${message.author.id}`] = null;
+        client[`author-${message.author.id}`] = null;
+        clearTimeout(client[`time-${message.author.id}`]);
+        client[`time-${message.author.id}`] = 0;
+        return;
       }
+
+      if (numberSongs.length > 1 && isDj) {
+        const songSelectedIdx = [];
+        const songSelect = client[`search-${message.author.id}`].filter(
+          (v, idx) => {
+            const isSelect = numberSongs.includes(`${idx + 1}`);
+            if (isSelect) {
+              songSelectedIdx.push(idx + 1);
+            }
+            return isSelect;
+          }
+        );
+        if (songSelect.length === 0) {
+          return message.channel
+            .send(
+              formatMsg(
+                `Please type from 1 to 10 or type 0 to cancel the search.`
+              )
+            )
+            .catch(console.error);
+        }
+
+        message.channel
+          .send(
+            formatMsg(`Selected \`${songSelectedIdx.join(', ')}\` success.`)
+          )
+          .catch(console.error);
+
+        client[`selectmulti-${serverId}`] = true;
+        client.distube.playCustomPlaylist(message, songSelect);
+        client[`search-${message.author.id}`] = null;
+        client[`author-${message.author.id}`] = null;
+        clearTimeout(client[`time-${message.author.id}`]);
+        client[`time-${message.author.id}`] = 0;
+        return;
+      } else if (numberSongs.length > 1 && !isDj) {
+        return message.channel
+          .send(formatMsg(`You need a \`DJ\` role to select multi songs!`))
+          .catch(console.error);
+      }
+      message.channel
+        .send(
+          formatMsg(`Please type from 1 to 10 or type 0 to cancel the search.`)
+        )
+        .catch(console.error);
     }
     return;
   }
-
-  const prefix = CONFIG.prefix;
-  client.prefix = {
-    ...client.prefix,
-    [serverId]: CONFIG.prefix,
-  };
 
   if (!message.content.startsWith(prefix)) return;
 
@@ -249,8 +319,11 @@ client.on('messageCreate', async (message) => {
 
   if (!cmd) return;
 
-  if (cmd.inVoiceChannel && !message.member.voice.channel)
-    return message.channel.send(formatMsg(`You must be in a voice channel!`));
+  if (cmd.inVoiceChannel && !message.member.voice.channel) {
+    return message.channel
+      .send(formatMsg(`You must be in a voice channel!`))
+      .catch(console.error);
+  }
 
   try {
     cmd.run({ client, message, args });
@@ -269,11 +342,11 @@ client.distube
     try {
       const embed = new Discord.MessageEmbed()
         .setColor('#00ff00')
-        .setTitle('Playing new Song!')
+        .setTitle('Playing new Song')
         .setDescription(
-          `**${removeSpoiler(song.name)}**  -  \`${
+          `**${removeSpoiler(song.name)}**\n\n**Duration:** \`${
             song.formattedDuration
-          }\` \nRequested by: ${song.user}\n\n${getStatus(queue)}`
+          }\`\n**Requested by:** ${song.user}\n\n${getStatus(queue)}`
         )
         .setTimestamp()
         .setFooter(
@@ -281,25 +354,36 @@ client.distube
           'https://cdn.discordapp.com/attachments/893077644311142450/896571458808082502/istockphoto-1036106190-612x612.jpeg'
         );
 
-      queue.textChannel.send({ embeds: [embed] });
+      queue.textChannel.send({ embeds: [embed] }).catch(console.error);
     } catch (err) {}
   })
   .on('addSong', (queue, song) => {
-    let text = 'Added new Song.';
+    let position;
+    let estimateTime = formatDuration(
+      queue.duration - queue.currentTime - song.duration
+    );
     if (queue.songs.length > 1) {
-      text = `Added new Song. Position: ${queue.songs.length - 1}`;
+      position = queue.songs.length - 1;
     }
     if (queue.songs.length > 1 && client.isPlayTop) {
-      text = `Added new Song. Position: 1`;
+      position = 1;
+      estimateTime = formatDuration(
+        queue.songs[0].duration - queue.currentTime
+      );
     }
     client.isPlayTop = false;
+
     const embed = new Discord.MessageEmbed()
-      .setColor('#00ff00')
-      .setTitle(text)
+      .setColor('#ffec13')
+      .setTitle('Added new Song')
       .setDescription(
-        `**${removeSpoiler(song.name)}**  -  \`${
+        `**${removeSpoiler(song.name)}**\n\n${
+          position ? `**Position:** \`${position}\`` : ''
+        }\n**Duration:** \`${
           song.formattedDuration
-        }\`\nRequested by: ${song.user}\n\n`
+        }\`\n**Estimated time until playing:** \`${estimateTime}\`\n**Requested by:** ${
+          song.user
+        }`
       )
       .setTimestamp()
       .setFooter(
@@ -307,14 +391,20 @@ client.distube
         'https://cdn.discordapp.com/attachments/893077644311142450/896571458808082502/istockphoto-1036106190-612x612.jpeg'
       );
 
-    queue.textChannel.send({ embeds: [embed] });
+    queue.textChannel.send({ embeds: [embed] }).catch(console.error);
   })
   .on('addList', (queue, playlist) => {
-    queue.textChannel.send(
-      formatMsg(
-        `Added \`${playlist.name}\` playlist (${playlist.songs.length} songs) to the queue!`
+    if (client[`selectmulti-${queue.clientMember.guild.id}`]) {
+      client[`selectmulti-${queue.clientMember.guild.id}`] = false;
+      return;
+    }
+    queue.textChannel
+      .send(
+        formatMsg(
+          `Added \`${playlist.name}\` playlist (${playlist.songs.length} songs) to the queue!`
+        )
       )
-    );
+      .catch(console.error);
   })
   .on('searchResult', (message, result) => {
     let i = 0;
@@ -330,13 +420,13 @@ client.distube
       )
       .setTimestamp();
 
-    message.channel.send({ embeds: [embed] });
+    message.channel.send({ embeds: [embed] }).catch(console.error);
   })
   .on('searchNoResult', (message, query) =>
-    message.channel.send(`No result found for ${query}!`)
+    message.channel.send(`No result found for ${query}!`).catch(console.error)
   )
   .on('searchInvalidAnswer', (message) =>
-    message.channel.send(`searchInvalidAnswer`)
+    message.channel.send(`searchInvalidAnswer`).catch(console.error)
   )
   .on('searchCancel', (message) => {
     const embed = new Discord.MessageEmbed()
@@ -345,28 +435,39 @@ client.distube
       .setDescription(`Searching canceled`)
       .setTimestamp();
 
-    message.channel.send({ embeds: [embed] });
+    message.channel.send({ embeds: [embed] }).catch(console.error);
   })
   .on('finishSong', (queue, song) => {
-    resetSkip(queue.clientMember.guild.id);
+    client[`skip-${queue.clientMember.guild.id}`] = null;
   })
   .on('finish', (queue) =>
-    queue.textChannel.send(formatMsg('No more song in queue'))
+    queue.textChannel
+      .send(formatMsg('No more song in queue'))
+      .catch(console.error)
   )
   .on('empty', (queue) =>
-    queue.textChannel.send(formatMsg('Channel is empty. Leaving the channel'))
+    queue.textChannel
+      .send(formatMsg('Channel is empty. Leaving the channel'))
+      .catch(console.error)
   )
   .on('disconnect', (queue) =>
-    queue.textChannel.send(formatMsg('Disconnected!'))
+    queue.textChannel.send(formatMsg('Disconnected!')).catch(console.error)
   )
   .on('error', async (channel, err) => {
+    let newErr = err;
+    if (err && err.errorCode && err.errorCode.includes('VOICE_MISSING_PERMS')) {
+      newErr = `**I do not have permission to join this voice channel**`;
+    }
+    if (err && err.errorCode && err.errorCode.includes('VOICE_FULL')) {
+      newErr = `**The voice channel is full**`;
+    }
     const embed = new Discord.MessageEmbed()
       .setColor('#ff0000')
-      .setTitle('An error encountered')
-      .setDescription(`${err}`)
+      .setTitle(' ')
+      .setDescription(`${newErr}`)
       .setTimestamp();
 
-    channel.send({ embeds: [embed] });
+    channel.send({ embeds: [embed] }).catch(console.error);
     await notifsError(err);
   })
   .on('initQueue', (queue) => {

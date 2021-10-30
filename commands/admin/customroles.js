@@ -1,33 +1,50 @@
 const fs = require('fs');
-const { getAllRole, isPermsDJ, CONFIG, formatMsg } = require('../../utils/index.js');
+const { CONFIG, formatMsg } = require('../../utils/index.js');
 
 module.exports = {
-  name: "Add custom roles to have DJ perms",
-  aliases: ["customroles", "cr"],
-  run: async ({ client, message, args }) => {  
+  name: 'Add custom roles to have DJ perms',
+  aliases: ['customroles', 'cr'],
+  run: async ({ client, message, args }) => {
     const user = message.author;
     const member = message.guild.members.cache.get(user.id);
     const memberPermissions = member.permissions.toArray();
- 
+
     if (!memberPermissions.includes('ADMINISTRATOR')) {
-      return message.channel.send(formatMsg(`You do not have permission to change the custom roles with DJ perms!`));
+      return message.channel
+        .send(
+          formatMsg(
+            `You do not have permission to change the custom roles with DJ perms!`
+          )
+        )
+        .catch(console.error);
     }
-    
+
     const serverId = message.guild.id;
-    const author = message.author;
     const path = `./data/customroles.json`;
 
     if (!fs.existsSync(path)) {
       fs.writeFileSync(path, JSON.stringify({}));
     }
-    let data = fs.readFileSync(path, {encoding:'utf8', flag:'r'});
+    let data = fs.readFileSync(path, { encoding: 'utf8', flag: 'r' });
     data = JSON.parse(data);
-    
+
     if (!args.length) {
       if (data[serverId] && data[serverId].length > 0) {
-        return message.channel.send(formatMsg(`The roles with DJ perms: \`${data[serverId].join(', ')}\``));
+        return message.channel
+          .send(
+            formatMsg(
+              `The roles with DJ perms: \`${data[serverId].join(', ')}\``
+            )
+          )
+          .catch(console.error);
       } else {
-        return message.channel.send(formatMsg(`No roles with DJ perms. Type \`${CONFIG.prefix}cr <Role name or Role ID>\``));
+        return message.channel
+          .send(
+            formatMsg(
+              `No roles with DJ perms. Type \`${CONFIG.prefix}cr <Role name or Role ID>\``
+            )
+          )
+          .catch(console.error);
       }
     }
 
@@ -35,7 +52,11 @@ module.exports = {
     const isRemoveCr = args.join(', ').includes('remove');
 
     if (isNumber) {
-      return message.channel.send(formatMsg(`Just enter the Name role or ID role without mention roles`));
+      return message.channel
+        .send(
+          formatMsg(`Just enter the Name role or ID role without mention roles`)
+        )
+        .catch(console.error);
     }
 
     if (isRemoveCr && args.length > 1) {
@@ -43,12 +64,26 @@ module.exports = {
         data[serverId] = data[serverId].filter((r) => !args.includes(r));
         client[`cr${serverId}`] = data[serverId];
         fs.writeFileSync(path, JSON.stringify(data));
-        return message.channel.send(formatMsg(`Remove Custome Role Done!`));
+        return message.channel
+          .send(formatMsg(`Remove Custome Role Done!`))
+          .catch(console.error);
       } else {
-        return message.channel.send(formatMsg(`No roles with DJ perms. Type \`${CONFIG.prefix}cr <Role name or Role ID>\``));
+        return message.channel
+          .send(
+            formatMsg(
+              `No roles with DJ perms. Type \`${CONFIG.prefix}cr <Role name or Role ID>\``
+            )
+          )
+          .catch(console.error);
       }
     } else if (isRemoveCr) {
-      return message.channel.send(formatMsg(`Type \`${CONFIG.prefix}cr remove <Role name or Role ID>\` to remove name role`));
+      return message.channel
+        .send(
+          formatMsg(
+            `Type \`${CONFIG.prefix}cr remove <Role name or Role ID>\` to remove name role`
+          )
+        )
+        .catch(console.error);
     }
 
     if (!data[serverId]) {
@@ -60,6 +95,8 @@ module.exports = {
     data[serverId] = [...new Set(data[serverId])];
     client[`cr${serverId}`] = data[serverId];
     fs.writeFileSync(path, JSON.stringify(data));
-    message.channel.send(formatMsg(`Added the roles with DJ perms: \`${args.join(', ')}\``));
-  }
-}
+    message.channel
+      .send(formatMsg(`Added the roles with DJ perms: \`${args.join(', ')}\``))
+      .catch(console.error);
+  },
+};

@@ -1,30 +1,48 @@
 const Discord = require('discord.js');
-const { isPermsDJ, CONFIG, addReact, formatMsg, removeSpoiler } = require('../../utils/index.js');
+const { formatMsg, removeSpoiler } = require('../../utils/index.js');
 
 module.exports = {
-  name: "Save current song",
-  aliases: ["save", "grab", "rob", "uwu", "aww"],
-  run: async ({client, message, args}) => {
-    if(!message.member.voice.channel) return message.channel.send(formatMsg("Please connect to a voice channel!")); 
-    
+  name: 'Save current song',
+  aliases: ['save', 'grab', 'rob', 'uwu', 'aww', 'owo', 'yoink'],
+  run: async ({ client, message, args }) => {
+    if (!message.member.voice.channel)
+      return message.channel
+        .send(formatMsg('Please connect to a voice channel!'))
+        .catch(console.error);
+
     const queue = client.distube.getQueue(message);
     if (!queue) {
-      return message.channel.send(formatMsg(`There are currently no songs`));
+      return message.channel
+        .send(formatMsg(`There are currently no songs`))
+        .catch(console.error);
     }
-   
+
     if (queue.songs.length) {
       const currentSong = queue.songs[0];
       const embed = new Discord.MessageEmbed()
-      .setTitle('Save song')
-      .setDescription(`[${removeSpoiler(currentSong.name)}](${currentSong.url})\n\`Duration: ${currentSong.formattedDuration} - Requested by: ${currentSong.user.username}#${currentSong.user.discriminator}\``)
-      .setColor('#00ff00')
-      .setTimestamp()
-      .setFooter('Made by Hùng. A person from Vietnam', 'https://cdn.discordapp.com/attachments/893077644311142450/896571458808082502/istockphoto-1036106190-612x612.jpeg');
+        .setTitle('Save song')
+        .setDescription(
+          `[${removeSpoiler(currentSong.name)}](${
+            currentSong.url
+          })\n\`Duration: ${currentSong.formattedDuration} - Requested by: ${
+            currentSong.user.username
+          }#${currentSong.user.discriminator}\``
+        )
+        .setColor('#00ff00')
+        .setTimestamp()
+        .setFooter(
+          'Made by Hùng. A person from Vietnam',
+          'https://cdn.discordapp.com/attachments/893077644311142450/896571458808082502/istockphoto-1036106190-612x612.jpeg'
+        );
 
-      message.author.send({embeds: [embed]}).catch(error => {
-        message.channel.send(formatMsg(`You have disabled \`Allow direct messages from server members\``));
+      message.author.send({ embeds: [embed] }).catch((error) => {
+        message.channel.send(
+          formatMsg(
+            `You have disabled \`Allow direct messages from server members\``
+          )
+        );
       });
-      message.react('📬');
+      message.react('📬').catch(console.error);
     }
-  }
-}
+  },
+};
