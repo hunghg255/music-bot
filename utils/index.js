@@ -1,5 +1,5 @@
 const { MessageEmbed, Util } = require('discord.js');
-const { getLyrics } = require('genius-lyrics-api');
+const { getLyrics, searchSong } = require('genius-lyrics-api');
 const fetch = require('node-fetch');
 const lyricsFinder = require('lyrics-finder');
 
@@ -45,8 +45,9 @@ const removeSpoiler = (str) => {
 module.exports.removeSpoiler = removeSpoiler;
 
 const addReact = async (message) => {
-  // message.react(CONFIG.emojis[Math.floor(Math.random() * CONFIG.emojis.length)])
-  //   .catch(console.error);
+  message
+    .react(CONFIG.emojis[Math.floor(Math.random() * CONFIG.emojis.length)])
+    .catch(console.error);
 };
 module.exports.addReact = addReact;
 
@@ -112,12 +113,15 @@ const getLyric = async (songName, artist) => {
 };
 module.exports.getLyric = getLyric;
 
-module.exports.getStatus = (queue) =>
-  `Status: \`${queue.playing ? 'Playing' : 'Pause'}\`\nVolume: \`${
-    queue.volume
-  }\` | Filter: \`${queue.filters.join(', ') || 'Off'}\` | Loop: \`${
+module.exports.getStatus = (queue, filters) => {
+  return `Status: \`${queue.playing ? 'Playing' : 'Pause'}\`\nFilters: \`${
+    queue.filters.filter((v) => v !== 'customspeed').join(', ') || 'Off'
+  }\`\nVolume: \`${queue.volume}\` | Speed: \`${
+    filters.customspeed.split('=')[1]
+  }x\` | Loop: \`${
     queue.repeatMode ? (queue.repeatMode === 2 ? 'Queue' : 'Song') : 'Off'
   }\` | Autoplay: \`${queue.autoplay ? 'On' : 'Off'}\``;
+};
 
 const swapPosition = (arr, x, y) => {
   const t = arr[x];
