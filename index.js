@@ -8,10 +8,10 @@ const { keepAlive } = require('./keep-alive.js');
 const { CONFIG, isPermsDJ, notifsError, formatMsg, checkPermission, removeSpoiler, formatDuration } = require('./utils/index.js');
 const filters = require('./data/filters.json');
 
-const client = new Discord.Client({ 
+const client = new Discord.Client({
   intents: [
-    Discord.Intents.FLAGS.GUILDS, 
-    Discord.Intents.FLAGS.GUILD_MESSAGES, 
+    Discord.Intents.FLAGS.GUILDS,
+    Discord.Intents.FLAGS.GUILD_MESSAGES,
     Discord.Intents.FLAGS.GUILD_VOICE_STATES,
     Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
     Discord.Intents.FLAGS.DIRECT_MESSAGES
@@ -80,7 +80,7 @@ client.on('ready', () => {
     `${client.guilds.cache.size} servers`,
     `${client.users.cache.size} users`,
   ];
-  
+
   let idx = 0;
   setInterval(() => {
     if (idx === arr.length) idx = 0;
@@ -97,7 +97,7 @@ client.on('ready', () => {
         ownerInfo: `${data.user.username}#${data.user.discriminator} - ${data.user.id}`
       })
     });
- 
+
     return {
       id: sv.id,
       name: sv.name,
@@ -147,7 +147,7 @@ client.on('messageCreate', async message => {
   const serverId = message.guild.id;
 
   // check custom roles
- 
+
   if (!client[`cr${serverId}`]) {
     let dataCR = fs.readFileSync(PATH_CUSTOM_ROLES, {encoding:'utf8', flag:'r'});
     dataCR = JSON.parse(dataCR);
@@ -258,7 +258,7 @@ client.on('messageCreate', async message => {
   const command = args.shift().toLowerCase();
 
   const cmd = client.commands.get(client.aliases.get(command));
-  
+
   if (!cmd) return;
 
   if (cmd.inVoiceChannel && !message.member.voice.channel) {
@@ -303,7 +303,7 @@ client.distube
       estimateTime = formatDuration(queue.songs[0].duration - queue.currentTime);
     }
     client.isPlayTop = false;
-    
+
     const embed = new Discord.MessageEmbed()
       .setColor('#ffec13')
       .setTitle('Added new Song')
@@ -373,6 +373,7 @@ client.distube
   .on("initQueue", queue => {
     queue.volume = 100;
     queue.autoplay = true;
+    queue.setFilter([`bassboost6`]);
 });
 
 keepAlive();
