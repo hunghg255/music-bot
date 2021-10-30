@@ -203,3 +203,21 @@ function formatDuration(sec) {
   return `00:${formatInt(seconds)}`;
 }
 module.exports.formatDuration = formatDuration;
+
+const toSecond = (input) => {
+  if (!input) return 0;
+  if (typeof input !== 'string') return Number(input) || 0;
+  if (input.match(/:/g)) {
+    const time = input.split(':').reverse();
+    let s = 0;
+    for (let i = 0; i < 3; i++)
+      if (time[i])
+        s += Number(time[i].replace(/[^\d.]+/g, '')) * Math.pow(60, i);
+    if (time.length > 3)
+      s += Number(time[3].replace(/[^\d.]+/g, '')) * 24 * 60 * 60;
+    return s;
+  } else {
+    return Number(input.replace(/[^\d.]+/g, '')) || 0;
+  }
+};
+module.exports.toSecond = toSecond;
