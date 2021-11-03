@@ -18,7 +18,7 @@ module.exports = {
     let result = await client.distube.search(args.join(" "), {limit: 10});
     result = result.sort((song1, song2) => song2.views - song1.views);
    
-    getEmbedMsg(message, "#ffec13", "", `**__Choose an option from below or wait 30 seconds to cancel or Type 0 to cannel search.__\n**\n${result.map((song, idx) => `**${++idx}**. **${removeSpoiler(song.name)}**\n\`${song.formattedDuration} | Views: ${song.views.toLocaleString('en-US')}\`\n`).join("\n")}`);
+    getEmbedMsg(message, "#ffec13", "__Choose an option from below or wait 30 seconds to cancel or Type 0 to cannel search.__", `\n${result.map((song, idx) => `**${++idx}**. **${removeSpoiler(song.name)}**\n${client.emojiReply}\`${song.formattedDuration} | Views: ${song.views.toLocaleString('en-US')}\`\n`).join("\n")}`);
     client[`search-${message.author.id}`] = result;
     client[`author-${message.author.id}`] = message.author.id;
 

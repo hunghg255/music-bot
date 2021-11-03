@@ -1,11 +1,11 @@
 const { MessageEmbed } = require('discord.js');
 const { CONFIG, addReact, formatMsg, removeSpoiler } = require('../../utils/index.js');
 
-const getEmbedQueue = (songs) => {
+const getEmbedQueue = (client, songs) => {
   const embeds = [];
   let k = 10;
 
-  const nowPlay = `**__Playing Now__**\n**${removeSpoiler(songs[0].name)}** | \`${songs[0].formattedDuration} - Requested by:\` ${songs[0].user}${songs.length > 1 ? `\n\n**__Up Next__**\n` : ''}`;
+  const nowPlay = `**__Playing Now__**\n${client.emojiReplyCount}**${removeSpoiler(songs[0].name)}**\n${client.emojiReply}\`${songs[0].formattedDuration} - \` ${songs[0].user}${songs.length > 1 ? `\n\n**__Up Next__**\n` : ''}`;
   if (songs.length == 1) {
     const embed = new MessageEmbed({
       title:  ' ',
@@ -20,7 +20,7 @@ const getEmbedQueue = (songs) => {
     const current = newSong.slice(i, k);
     let j = i;
     k += 10;
-   const info = current.map((val) => `**\`${val.idx}.\` ${removeSpoiler(val.name)}** | \`${val.formattedDuration} - Requested by:\` ${val.user}`);
+   const info = current.map((val) => `**${val.idx}. ${removeSpoiler(val.name)}**\n${client.emojiReply}\`${val.formattedDuration} - \` ${val.user}`);
     const embed = new MessageEmbed({
       title:  ' ',
       description: nowPlay + info.join('\n\n'),
@@ -50,7 +50,7 @@ module.exports = {
 
     let currentPage = 0;
 
-    const embeds = getEmbedQueue(queue.songs);
+    const embeds = getEmbedQueue(client, queue.songs);
 
     const inforQ = `**Current Page: \`${currentPage + 1}/${embeds.length}\`\nTotal: \`${queue.songs.length} songs\`\nTotal Time: \`${queue.formattedDuration}\` **`;
     embeds[currentPage].setTitle(inforQ);

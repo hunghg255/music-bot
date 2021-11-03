@@ -15,7 +15,7 @@ module.exports = {
     if (!queue) {
       return message.channel.send(formatMsg(`There are currently no songs`)).catch(console.error);
     }
-
+    
     const isDj = await isPermsDJ(client, message);
     if (!isDj) {
       return message.channel.send(formatMsg(`You need a \`DJ\` role to perform this command`)).catch(console.error);
@@ -27,7 +27,7 @@ module.exports = {
     if (time < 0 || time > currentSong.duration) {
       return message.channel.send(formatMsg(`Time should be between \`0\` and \`${currentSong.formattedDuration}\` seconds`)).catch(console.error);
     }
-
+    
     if (time || time == 0) {
       await client.distube.seek(message, time);
       message.channel.send(formatMsg(`Seeked this song for \`${time} seconds\` done`)).catch(console.error);

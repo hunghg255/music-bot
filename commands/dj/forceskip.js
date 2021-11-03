@@ -24,8 +24,8 @@ module.exports = {
     }
 
     const embed = new Discord.MessageEmbed()
-      .setTitle(`Force skip this song done!`)
-      .setDescription(`${message.author} skipped: **${removeSpoiler(queue.songs[0].name)}** | \`Requested by:\` ${queue.songs[0].user}`)
+      .setTitle(`**__\`${message.author.username}#${message.author.discriminator}\` forced skip this song done!__**`)
+      .setDescription(`**${removeSpoiler(queue.songs[0].name)}**\n${client.emojiReply}Requested by: ${queue.songs[0].user}`)
       .setColor('#ffec13')
       .setTimestamp()
       .setFooter('H', 'https://cdn.discordapp.com/attachments/893077644311142450/896571458808082502/istockphoto-1036106190-612x612.jpeg');

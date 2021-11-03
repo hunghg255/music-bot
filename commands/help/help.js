@@ -55,7 +55,7 @@ module.exports = {
     const helpText = getHelpText();
 
     const embed = new Discord.MessageEmbed()
-      .setTitle(`Commands with prefix: \`${CONFIG.prefix}\``)
+      .setTitle(`**Commands with prefix: \`${CONFIG.prefix}\`**`)
       .setDescription(helpText)
       .setColor('#00ff00')
       .setTimestamp()

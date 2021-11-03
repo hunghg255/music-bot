@@ -15,7 +15,7 @@ module.exports = {
     if (queue.songs.length) {
       const currentSong = queue.songs[0];
       const embed = new Discord.MessageEmbed()
-      .setTitle('Save song')
+      .setTitle('**Save song**')
       .setDescription(`[${removeSpoiler(currentSong.name)}](${currentSong.url})\n\`Duration: ${currentSong.formattedDuration} - Requested by: ${currentSong.user.username}#${currentSong.user.discriminator}\``)
       .setColor('#00ff00')
       .setTimestamp()

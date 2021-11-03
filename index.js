@@ -3,7 +3,6 @@ const Distube = require('distube');
 const fs = require('fs');
 const { SpotifyPlugin } = require('@distube/spotify');
 const { SoundCloudPlugin } = require('@distube/soundcloud');
-require('dotenv').config();
 
 const { keepAlive } = require('./keep-alive.js');
 const {
@@ -16,6 +15,8 @@ const {
   formatDuration,
 } = require('./utils/index.js');
 const filters = require('./data/filters.json');
+const { connectDb } = require('./data/index.js');
+const DataServerController = require('./data/dataServerController.js');
 
 const client = new Discord.Client({
   intents: [
@@ -62,9 +63,8 @@ client.distube = new Distube.default(client, {
 client.commands = new Discord.Collection();
 client.aliases = new Discord.Collection();
 client.prefix = {};
-
-const PATH_PREFIX = './data/prefix.json';
-const PATH_CUSTOM_ROLES = './data/customroles.json';
+client.customRoles = {};
+client.filters = {};
 
 const PATH_COMMANDS = [
   './commands/ownersbot/',
@@ -94,8 +94,9 @@ for (let c = 0; c < PATH_COMMANDS.length; c++) {
   });
 }
 
-client.on('ready', () => {
-  console.log(`Logged in as ${client.user.tag}!`);
+client.on('ready', async () => {
+  await connectDb();
+  console.log(`Logged in as ${client.user.tag}! - ${client.user.id}`);
 
   const arr = [
     `${client.guilds.cache.size} servers`,
@@ -109,7 +110,6 @@ client.on('ready', () => {
     idx++;
   }, 3000);
 
-  client.prefix = {};
   const server = client.guilds.cache.map((sv) => {
     sv.members.guild.fetchOwner().then((data) => {
       console.log({
@@ -125,29 +125,21 @@ client.on('ready', () => {
     };
   });
 
-  if (!fs.existsSync(PATH_PREFIX)) {
-    fs.writeFileSync(PATH_PREFIX, JSON.stringify({}));
-  }
-  let data = fs.readFileSync(PATH_PREFIX, { encoding: 'utf8', flag: 'r' });
-  data = JSON.parse(data);
-  let newData = {};
-  client.filters = {};
   for (let i = 0; i < server.length; i++) {
-    let sv = server[i];
-    if (!data[sv.id]) {
-      newData[sv.id] = CONFIG.prefix;
-    } else {
-      newData[sv.id] = data[sv.id];
-      client.prefix[sv.id] = data[sv.id];
-      client.filters[sv.id] = filters;
-    }
+    const idUnique = `${server[i].id}-${client.user.id}`;
+    client.filters[idUnique] = filters;
   }
 
-  fs.writeFileSync(PATH_PREFIX, JSON.stringify(newData));
-
-  if (!fs.existsSync(PATH_CUSTOM_ROLES)) {
-    fs.writeFileSync(PATH_CUSTOM_ROLES, JSON.stringify({}));
-  }
+  const emojis = [];
+  client.emojis.cache.map((emoji) => {
+    emojis.push({
+      id: emoji.id,
+      name: emoji.name,
+    });
+  });
+  client.emojiReply = client.emojis.cache.get('904949864721440768');
+  client.emojiReplyCount = client.emojis.cache.get('904970271994306581');
+  // console.log(emojis);
 });
 
 client.on('messageCreate', async (message) => {
@@ -168,35 +160,20 @@ client.on('messageCreate', async (message) => {
 
   if (!message.guild) return;
   const serverId = message.guild.id;
+  const idUnique = `${serverId}-${client.user.id}`;
 
   // check custom roles
-
-  if (!client[`cr${serverId}`]) {
-    let dataCR = fs.readFileSync(PATH_CUSTOM_ROLES, {
-      encoding: 'utf8',
-      flag: 'r',
-    });
-    dataCR = JSON.parse(dataCR);
-    if (dataCR[serverId]) {
-      client[`cr${serverId}`] = dataCR[serverId];
-    } else {
-      client[`cr${serverId}`] = [];
-    }
-  }
-
   // check prefix
+  if (!client.filters[idUnique]) client.filters[idUnique] = filters;
   if (!client.prefix) client.prefix = {};
-  if (!client.prefix[serverId]) {
-    let data = fs.readFileSync(PATH_PREFIX, { encoding: 'utf8', flag: 'r' });
-    data = JSON.parse(data);
-    if (data && data[serverId]) {
-      client.prefix[serverId] = data[serverId];
-    } else {
-      client.prefix[serverId] = CONFIG.prefixCache;
-    }
+  if (!client.prefix[idUnique]) {
+    const dataServer = await DataServerController.getDataServerById(idUnique);
+    client.prefix[idUnique] = dataServer.prefix;
+    client.customRoles[idUnique] = dataServer.customRoles;
   }
-  const prefix = client.prefix[serverId];
-  CONFIG.prefix = client.prefix[serverId];
+
+  const prefix = client.prefix[idUnique];
+  CONFIG.prefix = client.prefix[idUnique];
 
   if (message.content.includes(client.user.id)) {
     return message.channel
@@ -342,11 +319,13 @@ client.distube
     try {
       const embed = new Discord.MessageEmbed()
         .setColor('#00ff00')
-        .setTitle('Playing new Song')
+        .setTitle('**Playing new Song**')
         .setDescription(
-          `**${removeSpoiler(song.name)}**\n\n**Duration:** \`${
+          `${client.emojiReply}**${removeSpoiler(
+            song.name
+          )}**\n\n**Duration:** \`${
             song.formattedDuration
-          }\`\n**Requested by:** ${song.user}`
+          }\`\n**Requested by:** ${song.user}\n`
         )
         .setTimestamp()
         .setFooter(
@@ -375,9 +354,9 @@ client.distube
 
     const embed = new Discord.MessageEmbed()
       .setColor('#ffec13')
-      .setTitle('Added new Song')
+      .setTitle('**Added new Song**')
       .setDescription(
-        `**${removeSpoiler(song.name)}**\n\n${
+        `${client.emojiReply}**${removeSpoiler(song.name)}**\n\n${
           position ? `**Position:** \`${position}\`` : ''
         }\n**Duration:** \`${
           song.formattedDuration

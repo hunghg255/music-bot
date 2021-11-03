@@ -38,7 +38,7 @@ module.exports = {
       }
       
       queue.songs = [...queue.songs.slice(0,+args[0]), ...queue.songs.slice(+args[0] + 1)];
-      getEmbedMsg(message, "#00ff00", `\`${message.author.username}\` removed \`${args.join(' ')}\`.`, `\n**${songRemove.name}** | \`Requested by:\` ${songRemove.user}`);
+      getEmbedMsg(message, "#00ff00", `**\`${message.author.username}#${message.author.discriminator}\` removed \`${args.join(' ')}\`.**`, `\n**${songRemove.name}**\n${client.emojiReply}\`Requested by:\` ${songRemove.user}`);
       return;
     }
 
@@ -46,7 +46,7 @@ module.exports = {
     const listSongRemove = queue.songs.filter((item, idx) => args.includes(`${idx}`));
     queue.songs = queue.songs.filter((item, idx) => !args.includes(`${idx}`));
   
-    const textSongRemove = listSongRemove.map((val) => `**${val.name}** | \`Requested by:\` ${val.user}`).join('\n\n');
-    getEmbedMsg(message, "#00ff00", `\`${message.author.username}\` removed \`${args.join(' ')}\`.`, `\n${textSongRemove}`);
+    const textSongRemove = listSongRemove.map((val) => `**${val.name}**\n${client.emojiReply}\`Requested by:\` ${val.user}`).join('\n\n');
+    getEmbedMsg(message, "#00ff00", `**\`${message.author.username}#${message.author.discriminator}\` removed \`${args.join(' ')}\`.**`, `\n${textSongRemove}`);
   }
 }

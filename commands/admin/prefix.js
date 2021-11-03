@@ -1,5 +1,5 @@
-const fs = require('fs');
 const { CONFIG, formatMsg } = require('../../utils/index.js');
+const DataServerController = require('../../data/dataServerController.js');
 
 module.exports = {
   name: "Settings prefix",
@@ -10,7 +10,7 @@ module.exports = {
       return;
     }
  
-    const serverId = message.guild.id;
+    const idUnique = `${message.guild.id}-${client.user.id}`;
     const prefix = args[0].trim();
 
     const user = message.author;
@@ -18,24 +18,11 @@ module.exports = {
     const memberPermissions = member.permissions.toArray();
  
     if (memberPermissions.includes('ADMINISTRATOR')) {
-      // read file json
-      let data = fs.readFileSync('./data/prefix.json',{encoding:'utf8', flag:'r'});
-      data = JSON.parse(data);
-      data[serverId] = prefix;
-
-      fs.writeFile(
-        './data/prefix.json',
-        JSON.stringify(data),
-        function (err) {
-          if (err) throw err;
-          console.log(`${message.author.username} - ${serverId}: Change prefix success!`);
-          client.prefix = {
-            ...client.prefix,
-            [serverId]: prefix
-          }
-          return message.channel.send(formatMsg(`Prefix has been changed successfully. Prefix current is \`${prefix}\``)).catch(console.error);
-        }
-      );
+      try {
+        await DataServerController.updatePrefix(idUnique, prefix);
+        client.prefix[idUnique] = prefix;
+        return message.channel.send(formatMsg(`Prefix has been changed successfully. Prefix current is \`${prefix}\``)).catch(console.error);
+      } catch (err) {}
       return;
     }
     return message.channel.send(formatMsg(`You do not have permission to change the prefix, Please contact admin`)).catch(console.error);

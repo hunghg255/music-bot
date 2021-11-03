@@ -21,8 +21,8 @@ module.exports = {
 
     const currentSong = queue.songs[0];
     const embed = new Discord.MessageEmbed()
-      .setTitle(`Skip this song done!`)
-      .setDescription(`${message.author} skipped: **${removeSpoiler(currentSong.name)}** | \`Requested by:\` ${currentSong.user}`)
+      .setTitle(`**__Voted skip this song done!__**`)
+      .setDescription(`**${removeSpoiler(currentSong.name)}**\n${client.emojiReply}Requested by: ${currentSong.user}`)
       .setColor('#ffec13')
       .setTimestamp()
       .setFooter('H', 'https://cdn.discordapp.com/attachments/893077644311142450/896571458808082502/istockphoto-1036106190-612x612.jpeg');
@@ -78,9 +78,10 @@ module.exports = {
       }
       client[`skip-${serverId}`] = null;
       message.channel.send({embeds: [embed]}).catch(console.error);
+      return;
     }
 
-    if (client[`skip-${serverId}`].count) {
+    if (client[`skip-${serverId}`] && client[`skip-${serverId}`].count) {
       message.react('✅').catch(console.error);
       message.channel.send(formatMsg(`Voted skip \`(${client[`skip-${serverId}`].count}/${person.length})\``)).catch(console.error);
     }

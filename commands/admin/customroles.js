@@ -1,5 +1,5 @@
-const fs = require('fs');
-const { getAllRole, isPermsDJ, CONFIG, formatMsg } = require('../../utils/index.js');
+const { CONFIG, formatMsg, getEmbedMsg } = require('../../utils/index.js');
+const DataServerController = require('../../data/dataServerController.js');
 
 module.exports = {
   name: "Add custom roles to have DJ perms",
@@ -13,53 +13,36 @@ module.exports = {
       return message.channel.send(formatMsg(`You do not have permission to change the custom roles with DJ perms!`)).catch(console.error);
     }
     
-    const serverId = message.guild.id;
-    const author = message.author;
-    const path = `./data/customroles.json`;
-
-    if (!fs.existsSync(path)) {
-      fs.writeFileSync(path, JSON.stringify({}));
-    }
-    let data = fs.readFileSync(path, {encoding:'utf8', flag:'r'});
-    data = JSON.parse(data);
+    const idUnique = `${message.guild.id}-${client.user.id}`;
     
+    const dataServer = await DataServerController.getDataServerById(idUnique);
+
     if (!args.length) {
-      if (data[serverId] && data[serverId].length > 0) {
-        return message.channel.send(formatMsg(`The roles with DJ perms: \`${data[serverId].join(', ')}\``)).catch(console.error);
+      if (dataServer.customRoles.length) {
+        getEmbedMsg(message, "#00ff00", `**__The roles with DJ perms__**`, `\`${dataServer.customRoles.join('\n')}\``);
       } else {
         return message.channel.send(formatMsg(`No roles with DJ perms. Type \`${CONFIG.prefix}cr <Role name or Role ID>\``)).catch(console.error);
       }
+      return;
     }
 
-    const isNumber = args.join(', ').includes('@&');
-    const isRemoveCr = args.join(', ').includes('remove');
-
-    if (isNumber) {
-      return message.channel.send(formatMsg(`Just enter the Name role or ID role without mention roles`)).catch(console.error);
+    const rolesText = args.filter(v => !v.includes('@&'));
+    const rolesMentions = message.mentions.roles.map(role => role.name);
+    const crArr = [...rolesText, ...rolesMentions].filter(v => v && v.toLowerCase() !== 'remove');
+    const isRemoveCr = args.join(' ').toLowerCase().includes('remove');
+  
+    if (isRemoveCr) {
+      if (!dataServer.customRoles.length || !crArr.length) return message.channel.send(formatMsg(`Type \`${CONFIG.prefix}cr remove <Role name or Role ID>\``)).catch(console.error);
+      const customRoles = await DataServerController.removeCustomRoles(idUnique, crArr);
+      client.customRoles[idUnique] = customRoles;
+      getEmbedMsg(message, "#00ff00", `**__Remove Custome Role__**`, `\`${crArr.join('\n')}\``);
+      return;
     }
-
-    if (isRemoveCr && args.length > 1) {
-      if (data[serverId]) {
-        data[serverId] = data[serverId].filter((r) => !args.includes(r));
-        client[`cr${serverId}`] = data[serverId];
-        fs.writeFileSync(path, JSON.stringify(data));
-        return message.channel.send(formatMsg(`Remove Custome Role Done!`)).catch(console.error);
-      } else {
-        return message.channel.send(formatMsg(`No roles with DJ perms. Type \`${CONFIG.prefix}cr <Role name or Role ID>\``)).catch(console.error);
-      }
-    } else if (isRemoveCr) {
-      return message.channel.send(formatMsg(`Type \`${CONFIG.prefix}cr remove <Role name or Role ID>\` to remove name role`)).catch(console.error);
-    }
-
-    if (!data[serverId]) {
-      data[serverId] = [...args];
-    } else {
-      data[serverId] = [...data[serverId], ...args];
-    }
-
-    data[serverId] = [...new Set(data[serverId])];
-    client[`cr${serverId}`] = data[serverId];
-    fs.writeFileSync(path, JSON.stringify(data));
-    message.channel.send(formatMsg(`Added the roles with DJ perms: \`${args.join(', ')}\``)).catch(console.error);
+    
+    try {
+      const customRoles = await DataServerController.updateCustomRoles(idUnique, crArr);
+      client.customRoles[idUnique] = customRoles;
+      getEmbedMsg(message, "#00ff00", `**__Added the roles with DJ perms__**`, `\`${crArr.join('\n')}\``);
+    } catch (err) {}
   }
 }

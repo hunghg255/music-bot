@@ -16,12 +16,12 @@ module.exports = {
     }
 
     if (queue.songs.length) {
-      getEmbedMsg(message, "#00ff00", "Now Playing", `**${removeSpoiler(queue.songs[0].name)}**\n\n\`${progressBar({
+      getEmbedMsg(message, "#00ff00", `Now Playing`, `**${client.emojiReplyCount}${removeSpoiler(queue.songs[0].name)}**\n${client.emojiReplyCount}\`${progressBar({
         time: queue.currentTime,
         totalTime: queue.songs[0].duration,
         timeFormat: queue.formattedCurrentTime,
         totalTimeFormat: queue.songs[0].formattedDuration
-      })}\`\n**Requested by:** ${queue.songs[0].user}\n\n${getStatus(queue, client.filters[message.guild.id])}`)
+      })}\`\n${client.emojiReply}\`Requested by:\` ${queue.songs[0].user}\n\n${getStatus(queue, client.filters[`${message.guild.id}-${client.user.id}`])}`)
     }
   }
 }
