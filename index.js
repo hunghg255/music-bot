@@ -175,6 +175,7 @@ client.on('messageCreate', async (message) => {
   }
 
   // check prefix
+  if (!client.filters[serverId]) client.filters[sv.id] = filters;
   if (!client.prefix) client.prefix = {};
   if (!client.prefix[serverId]) {
     let data = fs.readFileSync(PATH_PREFIX, { encoding: 'utf8', flag: 'r' });
