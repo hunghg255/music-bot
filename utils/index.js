@@ -33,7 +33,7 @@ const CONFIG = {
     '🤩',
     '👀',
   ],
-  lyricsKEY: '',
+  lyricsKEY: process.env.LYRIC_API,
   ytck: '',
   wh: '',
 };
