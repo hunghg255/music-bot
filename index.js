@@ -129,8 +129,8 @@ client.on('ready', () => {
     } else {
       newData[sv.id] = data[sv.id];
       client.prefix[sv.id] = data[sv.id];
-      client.filters[sv.id] = filters;
     }
+    client.filters[sv.id] = filters;
   }
 
   fs.writeFileSync(PATH_PREFIX, JSON.stringify(newData));
