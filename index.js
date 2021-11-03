@@ -139,8 +139,8 @@ client.on('ready', () => {
     } else {
       newData[sv.id] = data[sv.id];
       client.prefix[sv.id] = data[sv.id];
-      client.filters[sv.id] = filters;
     }
+    client.filters[sv.id] = filters;
   }
 
   fs.writeFileSync(PATH_PREFIX, JSON.stringify(newData));
@@ -185,6 +185,7 @@ client.on('messageCreate', async (message) => {
   }
 
   // check prefix
+  if (!client.filters[serverId]) client.filters[sv.id] = filters;
   if (!client.prefix) client.prefix = {};
   if (!client.prefix[serverId]) {
     let data = fs.readFileSync(PATH_PREFIX, { encoding: 'utf8', flag: 'r' });
