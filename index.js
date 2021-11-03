@@ -3,6 +3,7 @@ const Distube = require('distube');
 const fs = require('fs');
 const { SpotifyPlugin } = require('@distube/spotify');
 const { SoundCloudPlugin } = require('@distube/soundcloud');
+require('dotenv').config();
 
 const { keepAlive } = require('./keep-alive.js');
 const {
