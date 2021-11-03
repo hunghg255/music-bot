@@ -1,41 +1,12 @@
 const { MessageEmbed, Util } = require('discord.js');
-const { getLyrics, searchSong } = require('genius-lyrics-api');
-const fetch = require('node-fetch');
+const { getLyrics } = require('genius-lyrics-api');
 const lyricsFinder = require('lyrics-finder');
 
 const CONFIG = {
   prefix: '!!',
   prefixCache: '!!',
-  emojis: [
-    '💖',
-    '🥰',
-    '😍',
-    '❤️‍🔥',
-    '😘',
-    '😊',
-    '💕',
-    '🙉',
-    '😻',
-    '💟',
-    '💙',
-    '🧡',
-    '💛',
-    '💚',
-    '💜',
-    '👏',
-    '🙌',
-    '🙋‍♂️',
-    '🙋',
-    '🤗',
-    '❣️',
-    '🙏',
-    '🤭',
-    '🤩',
-    '👀',
-  ],
   lyricsKEY: '',
   ytck: '',
-  wh: '',
 };
 module.exports.CONFIG = CONFIG;
 
@@ -45,9 +16,9 @@ const removeSpoiler = (str) => {
 module.exports.removeSpoiler = removeSpoiler;
 
 const addReact = async (message) => {
-  message
-    .react(CONFIG.emojis[Math.floor(Math.random() * CONFIG.emojis.length)])
-    .catch(console.error);
+  // message
+  //   .react(CONFIG.emojis[Math.floor(Math.random() * CONFIG.emojis.length)])
+  //   .catch(console.error);
 };
 module.exports.addReact = addReact;
 
@@ -86,11 +57,7 @@ const getEmbedMsg = (message, color, title, description) => {
     description: removeSpoiler(description || '') || ' ',
   })
     .setColor(color)
-    .setTimestamp()
-    .setFooter(
-      'H',
-      'https://cdn.discordapp.com/attachments/893077644311142450/896571458808082502/istockphoto-1036106190-612x612.jpeg'
-    );
+    .setTimestamp();
 
   message.channel.send({ embeds: [embed] }).catch(console.error);
 };
